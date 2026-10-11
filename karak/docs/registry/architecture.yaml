@@ -1,0 +1,233 @@
+# Architecture Registry — Karak Digital
+# Auto-maintained by /architecture-decision skill.
+# Each entry records an accepted architectural stance with its source ADR.
+# Never edit manually — use /architecture-decision to add or supersede entries.
+
+state_ownership:
+  - id: so-001
+    state: class_definitions
+    owner: ClassRegistry
+    adr: ADR-0001
+    interface: "ClassRegistry.get_class(id: StringName) -> HeroClassData"
+    notes: "Read-only Autoload. 7 HeroClassData resources loaded via preload() in _ready()."
+
+  - id: so-002
+    state: item_definitions
+    owner: ItemDatabase
+    adr: ADR-0001
+    interface: "ItemDatabase.get_item(id: StringName) -> ItemData"
+    notes: "Read-only Autoload. 6 ItemData resources loaded via preload() in _ready()."
+
+  - id: so-003
+    state: monster_definitions
+    owner: MonsterDatabase
+    adr: ADR-0001
+    interface: "MonsterDatabase.get_monster(id: StringName) -> MonsterData"
+    notes: "Read-only Autoload. 8 MonsterData resources loaded via preload() in _ready()."
+
+interfaces:
+  - id: if-001
+    contract: autoload_data_lookup
+    adr: ADR-0001
+    pattern: "Direct Autoload access — ClassRegistry.get_*(id), ItemDatabase.get_item(id), MonsterDatabase.get_monster(id)"
+    notes: "No @export ref needed for Autoload access. Available from any script."
+
+forbidden_patterns:
+  - id: fp-001
+    pattern: mutable_state_in_autoload
+    adr: ADR-0001
+    description: "Autoloads (ClassRegistry, ItemDatabase, MonsterDatabase) must never store mutable game state. No var that changes during gameplay."
+    enforcement: "Code review + comment ## READ-ONLY in each Autoload class header."
+
+  - id: fp-002
+    pattern: playerstate_as_autoload
+    adr: ADR-0001
+    description: "PlayerState must never be an Autoload singleton. It requires ×N independent instances (one per player)."
+    enforcement: "ADR-0003 expands on this."
+
+  - id: fp-003
+    pattern: export_inspector_slots_in_autoloads
+    adr: ADR-0001
+    description: "Do not use @export Inspector slots in Autoload scripts to assign resource files. Use preload() or load() in _ready() instead."
+    enforcement: "Fragile under file rename without UID tracking."
+
+  - id: if-002
+    contract: cross_system_signal_wiring
+    adr: ADR-0002
+    pattern: "All cross-system signal connections in GameScene._wire_signals() only. Systems do not connect external signals in their own _ready()."
+    notes: "Callable.bind() syntax for per-player routing. Typed signals mandatory."
+
+forbidden_patterns:
+  - id: fp-004
+    pattern: system_self_wiring_in_ready
+    adr: ADR-0002
+    description: "Systems must not call .connect() on other systems' signals inside their own _ready(). Only internal (self) signal connections are allowed in _ready()."
+    enforcement: "grep: .connect( in _ready() outside game_scene.gd — CI validation criterion."
+
+  - id: fp-005
+    pattern: synchronous_dungeon_initialized_emit
+    adr: ADR-0002
+    description: "DungeonGenerator.init() must not emit dungeon_initialized synchronously. _wire_signals() must complete first. Use call_deferred or direct call after _wire_signals()."
+    enforcement: "Hard contract documented in ADR-0005."
+
+api_decisions:
+  - id: ad-001
+    decision: autoload_resource_loading
+    adr: ADR-0001
+    choice: "preload() or load() in _ready() — not @export Inspector slots"
+    rationale: "Standard Godot 4 pattern; resilient to file moves when using UIDs."
+
+state_ownership_playerstate:
+  - id: so-004
+    state: player_runtime_state
+    owner: PlayerState
+    adr: ADR-0003
+    interface: "PlayerState.hp (int), PlayerState.vp (float), PlayerState.position (Vector2i), PlayerState.weapons/scrolls/key (Array[ItemData])"
+    notes: "Node (not Resource). ×N instances, one per player. Independent mutable state."
+
+forbidden_patterns_playerstate:
+  - id: fp-006
+    pattern: playerstate_as_resource
+    adr: ADR-0003
+    description: "PlayerState must never extend Resource. Resources have no _ready() lifecycle, no automatic signal disconnect, and can be accidentally shared between Inspector slots."
+    enforcement: "class_name check: PlayerState must extend Node."
+
+  - id: fp-007
+    pattern: heroclass_mutable_state
+    adr: ADR-0003
+    description: "HeroClassData extends Resource and is read-only. Never add var fields that change during gameplay to HeroClassData. Mutable runtime data belongs in PlayerState."
+    enforcement: "Code review. HeroClassData fields must all be @export with no runtime mutations."
+
+state_ownership_tilesystem:
+  - id: so-005
+    state: dungeon_grid
+    owner: TileSystem
+    adr: ADR-0004
+    interface: "TileSystem.get_cell(pos: Vector2i) -> DungeonCell; reveal_cell/clear_cell/draw_tile/place_cell"
+    notes: "Node2D with TileMapLayer children. Grid stored as Dictionary[Vector2i, DungeonCell]."
+
+api_decisions_tilesystem:
+  - id: ad-002
+    decision: tile_rendering_node
+    adr: ADR-0004
+    choice: "TileMapLayer (not deprecated TileMap)"
+    rationale: "TileMap deprecated since Godot 4.3. TileMapLayer is the current stable API confirmed in 4.7.2."
+
+  - id: ad-003
+    decision: dungeon_cell_type
+    adr: ADR-0004
+    choice: "Plain GDScript class (class_name DungeonCell, no extends) — not Resource, not Node"
+    rationale: "No signals, no _ready(), no .tres serialization needed at MVP. Plain class = RefCounted, lightweight, independently mutable."
+
+forbidden_patterns_tilesystem:
+  - id: fp-008
+    pattern: tilemap_deprecated_node
+    adr: ADR-0004
+    description: "Never use TileMap node. Use TileMapLayer. TileMap is deprecated since Godot 4.3."
+    enforcement: "Scene tree check: no TileMap node in GameScene. grep: TileMap in .tscn files."
+
+  - id: fp-009
+    pattern: tilemap_layer_index_argument
+    adr: ADR-0004
+    description: "TileMapLayer.set_cell() takes (pos, source_id, atlas_coords) — no leading layer int. The legacy TileMap pattern set_cell(0, pos, ...) is wrong for TileMapLayer."
+    enforcement: "Code review. Document in place_cell() implementation comment."
+
+api_decisions_dungeon_generator:
+  - id: ad-004
+    decision: dungeon_initialized_timing
+    adr: ADR-0005
+    choice: "_emit_initialized.call_deferred() inside initialize() — Callable form, not string-based"
+    rationale: "Ensures dungeon_initialized fires after _wire_signals() completes. Callable form is type-safe (resolves ADR-0002 fp-005)."
+
+forbidden_patterns_dungeon_generator:
+  - id: fp-010
+    pattern: dungeon_generator_synchronous_signal
+    adr: ADR-0005
+    description: "DungeonGenerator.initialize() must never emit dungeon_initialized synchronously. Use _emit_initialized.call_deferred() to guarantee TurnManager is connected first."
+    enforcement: "grep: dungeon_initialized.emit() NOT inside call_deferred or _emit_initialized — CI criterion."
+
+api_decisions_combat:
+  - id: ad-005
+    decision: combat_payload_type
+    adr: ADR-0006
+    choice: "CombatOptions extends Resource + CombatAction extends Resource — typed signal payloads"
+    rationale: "Static type safety at signal boundaries. Dictionary rejected (untyped, violates coding standards)."
+
+forbidden_patterns_combat:
+  - id: fp-011
+    pattern: dictionary_in_combat_signals
+    adr: ADR-0006
+    description: "player_choice_requested and player_action_taken signals must use CombatOptions/CombatAction Resource types, never Dictionary. Dictionary signal params lose static type safety."
+    enforcement: "Signal declarations must use typed Resource params. Code review."
+
+  - id: fp-012
+    pattern: dot_notation_for_resource_access
+    adr: ADR-0006
+    description: "Always use dot notation (action.reroll_type) on typed Resource variables, never bracket notation (action['key']). Bracket access bypasses compile-time type checking."
+    enforcement: "Code review. GDScript dot-access on typed vars is compile-time checked; bracket access is not."
+
+api_decisions_enums:
+  - id: ad-006
+    decision: shared_enum_location
+    adr: ADR-0007
+    choice: "class_name GameEnums — plain GDScript class, no extends, no Autoload"
+    rationale: "class_name registers globally; no preload needed. Autoload rejected (overhead without benefit for pure definitions)."
+
+  - id: ad-007
+    decision: enum_in_signals
+    adr: ADR-0007
+    choice: "Enum signal parameters declared as int; comment documents the enum type: ## param: GameEnums.EnumType"
+    rationale: "GDScript 4.x does not support enum types as typed signal parameters. int + comment convention is the standard workaround."
+
+forbidden_patterns_enums:
+  - id: fp-013
+    pattern: enum_type_in_signal_parameter
+    adr: ADR-0007
+    description: "Signal parameters that represent enum values must be declared as int, not as GameEnums.EnumType. GDScript 4.x does not support enum types in signal declarations."
+    enforcement: "Code review. signal declarations grep: GameEnums in signal param types = error."
+
+  - id: fp-014
+    pattern: preload_game_enums
+    adr: ADR-0007
+    description: "Never preload game_enums.gd. class_name GameEnums is globally accessible without preload. A preload() of game_enums.gd indicates the developer does not know about class_name global access."
+    enforcement: "grep: preload.*game_enums — should return zero results."
+
+api_decisions_stateless:
+  - id: ad-008
+    decision: feature_system_state_policy
+    adr: ADR-0008
+    choice: "EncounterDispatcher/LootSystem/KnockoutSystem/WinCondition are stateless. TurnManager is the only stateful Feature system. CombatSystem holds ephemeral combat-local state (reset per combat)."
+    rationale: "Stateless systems are trivially testable and immune to stale-state bugs."
+
+forbidden_patterns_stateless:
+  - id: fp-015
+    pattern: persistent_var_in_stateless_system
+    adr: ADR-0008
+    description: "EncounterDispatcher, LootSystem, KnockoutSystem, WinCondition must not have var fields that accumulate across events. Only @export and @onready refs are permitted."
+    enforcement: "grep: ^var in stateless system files (excluding @export/@onready) — any hit is a violation."
+
+api_decisions_canvas:
+  - id: ad-009
+    decision: presentation_layer_nodes
+    adr: ADR-0009
+    choice: "HUD=CanvasLayer(10), CombatUI=CanvasLayer(11), InventoryUI=CanvasLayer(10), TileRevealVFX=Node2D"
+    rationale: "CombatUI layer=11 renders above HUD layer=10. TileRevealVFX as Node2D follows scene-space camera."
+
+  - id: ad-010
+    decision: presentation_to_feature_signal
+    adr: ADR-0009
+    choice: "CombatUI.player_action_taken is the ONLY approved Presentation→Feature signal"
+    rationale: "Needed for player combat choice to reach CombatSystem. All other P→F direct communication is prohibited."
+
+forbidden_patterns_canvas:
+  - id: fp-016
+    pattern: tilereveadvfx_as_canvaslayer
+    adr: ADR-0009
+    description: "TileRevealVFX must be Node2D (scene space), never CanvasLayer. CanvasLayer is fixed to viewport — tile flip animations would not align with board tiles if camera moves."
+    enforcement: "class check: TileRevealVFX extends Node2D."
+
+  - id: fp-017
+    pattern: unauthorized_presentation_to_feature_signal
+    adr: ADR-0009
+    description: "Only CombatUI.player_action_taken is approved as a Presentation→Feature signal. Any other signal from HUD, InventoryUI, or TileRevealVFX consumed by Feature/Core layer requires an ADR update."
+    enforcement: "Code review. Signal connection audit in GameScene._wire_signals()."

@@ -1,0 +1,19 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Godot import cache
+*.import
+
+# Reports (GdUnit4 output)
+reports/
+
+# Addons (GdUnit4 installed locally — CI installs via gdUnit4-action)
+addons/
+
+# Session state (ephemeral — gitignored per context-management.md)
+production/session-state/
+production/session-logs/
+
+# OS
+.DS_Store

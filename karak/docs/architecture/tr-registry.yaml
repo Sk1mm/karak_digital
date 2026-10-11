@@ -1,0 +1,306 @@
+# Technical Requirements Registry
+# Stable TR-IDs for cross-referencing between GDDs, ADRs, stories, and tests.
+# IDs are never renumbered or deleted — deprecated entries are marked status: deprecated.
+
+last_updated: "2026-10-11"
+version: 1
+
+requirements:
+  # === PlayerState ===
+  - id: TR-player-state-001
+    system: PlayerState
+    gdd: design/gdd/player-state.md
+    requirement: "Two independent player state instances with HP, VP, inventory, position, knockout"
+    adr: [ADR-0003]
+    status: active
+
+  - id: TR-player-state-002
+    system: PlayerState
+    gdd: design/gdd/player-state.md
+    requirement: "Typed signals for all state changes (hp_changed, vp_changed, item_added, item_removed, knocked_out, knockout_cleared)"
+    adr: [ADR-0002, ADR-0003]
+    status: active
+
+  - id: TR-player-state-003
+    system: PlayerState
+    gdd: design/gdd/player-state.md
+    requirement: "HP clamped to [0, max_hp], initialized from character class data"
+    adr: [ADR-0003]
+    status: active
+
+  # === ClassSystem ===
+  - id: TR-class-001
+    system: ClassSystem
+    gdd: design/gdd/class-system.md
+    requirement: "7 hero classes as read-only HeroClassData Resources with ability flags"
+    adr: [ADR-0003]
+    status: active
+
+  - id: TR-class-002
+    system: ClassSystem
+    gdd: design/gdd/class-system.md
+    requirement: "Global ClassRegistry accessible from any system without import/preload"
+    adr: [ADR-0001]
+    status: active
+
+  # === TileSystem ===
+  - id: TR-tile-001
+    system: TileSystem
+    gdd: design/gdd/tile-system.md
+    requirement: "Sparse grid storage Dictionary[Vector2i, DungeonCell] with O(1) lookup"
+    adr: [ADR-0004]
+    status: active
+
+  - id: TR-tile-002
+    system: TileSystem
+    gdd: design/gdd/tile-system.md
+    requirement: "TileMapLayer rendering (not deprecated TileMap)"
+    adr: [ADR-0004]
+    status: active
+
+  - id: TR-tile-003
+    system: TileSystem
+    gdd: design/gdd/tile-system.md
+    requirement: "5 tile categories (CORRIDOR, ROOM, FOUNTAIN, FOUNTAIN_SECONDARY, PORTAL) with state machine"
+    adr: [ADR-0004, ADR-0007]
+    status: active
+
+  - id: TR-tile-004
+    system: TileSystem
+    gdd: design/gdd/tile-system.md
+    requirement: "Cell exits computed from TileShape + rotation"
+    adr: [ADR-0004]
+    status: active
+
+  # === DiceSystem ===
+  - id: TR-dice-001
+    system: DiceSystem
+    gdd: design/gdd/dice-system.md
+    requirement: "Seed-based deterministic RNG with roll(n, sides) and reroll_die(index) API"
+    adr: [ADR-0008]
+    status: active
+
+  # === MonsterDatabase ===
+  - id: TR-monster-001
+    system: MonsterDatabase
+    gdd: design/gdd/monster-database.md
+    requirement: "8 monsters as read-only MonsterData with difficulty values, globally accessible"
+    adr: [ADR-0001]
+    status: active
+
+  # === ItemDatabase ===
+  - id: TR-item-001
+    system: ItemDatabase
+    gdd: design/gdd/item-database.md
+    requirement: "6 items as read-only ItemData with typed properties (WEAPON/KEY/SCROLL), globally accessible"
+    adr: [ADR-0001]
+    status: active
+
+  # === DungeonGenerator ===
+  - id: TR-dungeon-001
+    system: DungeonGenerator
+    gdd: design/gdd/dungeon-generator.md
+    requirement: "Pool assembly (80 tiles, 53 tokens) with seed-based shuffle and one-time init"
+    adr: [ADR-0005]
+    status: active
+
+  - id: TR-dungeon-002
+    system: DungeonGenerator
+    gdd: design/gdd/dungeon-generator.md
+    requirement: "Deferred signal emission (call_deferred) for safe wiring after _wire_signals()"
+    adr: [ADR-0005]
+    status: active
+
+  # === TurnManager ===
+  - id: TR-turn-001
+    system: TurnManager
+    gdd: design/gdd/turn-manager.md
+    requirement: "FSM with states: IDLE, AWAITING_INIT, TURN_ACTIVE, AWAITING_COMBAT, AWAITING_LOOT, GAME_OVER"
+    adr: [ADR-0008]
+    status: active
+
+  - id: TR-turn-002
+    system: TurnManager
+    gdd: design/gdd/turn-manager.md
+    requirement: "4-step-per-turn budget, player switching, knockout skip handling"
+    adr: [ADR-0008]
+    status: active
+
+  - id: TR-turn-003
+    system: TurnManager
+    gdd: design/gdd/turn-manager.md
+    requirement: "Swordsman extra step continuation on 6-roll"
+    adr: []
+    status: active
+
+  # === MovementSystem ===
+  - id: TR-movement-001
+    system: MovementSystem
+    gdd: design/gdd/movement-system.md
+    requirement: "Tile placement validation with exit connectivity checking"
+    adr: [ADR-0008]
+    status: active
+
+  - id: TR-movement-002
+    system: MovementSystem
+    gdd: design/gdd/movement-system.md
+    requirement: "Class-specific movement bypasses (Rogue, Swordswoman, Wizard, Warlock)"
+    adr: []
+    status: active
+
+  - id: TR-movement-003
+    system: MovementSystem
+    gdd: design/gdd/movement-system.md
+    requirement: "Portal movement cost rules"
+    adr: []
+    status: active
+
+  # === EncounterDispatcher ===
+  - id: TR-encounter-001
+    system: EncounterDispatcher
+    gdd: design/gdd/encounter-dispatcher.md
+    requirement: "Stateless signal router: ROOM -> combat/loot, FOUNTAIN -> heal, PORTAL -> teleport, CORRIDOR -> clear"
+    adr: [ADR-0008]
+    status: active
+
+  # === CombatSystem ===
+  - id: TR-combat-001
+    system: CombatSystem
+    gdd: design/gdd/combat-system.md
+    requirement: "2d6 + attack_bonus vs difficulty comparison with WIN/DRAW/LOSS outcomes"
+    adr: [ADR-0006, ADR-0008]
+    status: active
+
+  - id: TR-combat-002
+    system: CombatSystem
+    gdd: design/gdd/combat-system.md
+    requirement: "Class rerolls (Warrior both, Swordsman one), scroll bonuses, HP cost (Warlock)"
+    adr: [ADR-0006]
+    status: active
+
+  - id: TR-combat-003
+    system: CombatSystem
+    gdd: design/gdd/combat-system.md
+    requirement: "Ephemeral combat-local state reset at _on_combat_started()"
+    adr: [ADR-0008]
+    status: active
+
+  # === LootSystem ===
+  - id: TR-loot-001
+    system: LootSystem
+    gdd: design/gdd/loot-system.md
+    requirement: "Monster drop table lookup (8 monsters -> items)"
+    adr: [ADR-0008]
+    status: active
+
+  - id: TR-loot-002
+    system: LootSystem
+    gdd: design/gdd/loot-system.md
+    requirement: "Chest VP award (1 VP), key pickup automation"
+    adr: [ADR-0008]
+    status: active
+
+  - id: TR-loot-003
+    system: LootSystem
+    gdd: design/gdd/loot-system.md
+    requirement: "Item replacement logic (weakest weapon replaced on pickup)"
+    adr: []
+    status: active
+
+  # === KnockoutSystem ===
+  - id: TR-knockout-001
+    system: KnockoutSystem
+    gdd: design/gdd/knockout-system.md
+    requirement: "Damage to 0 HP -> HP=1 + skip_next_turn=true"
+    adr: [ADR-0008]
+    status: active
+
+  - id: TR-knockout-002
+    system: KnockoutSystem
+    gdd: design/gdd/knockout-system.md
+    requirement: "Warrior exception: teleport to start + heal full + no skip"
+    adr: [ADR-0008]
+    status: active
+
+  # === WinCondition ===
+  - id: TR-win-001
+    system: WinCondition
+    gdd: design/gdd/win-condition.md
+    requirement: "Dragon kill triggers game_over signal"
+    adr: [ADR-0008]
+    status: active
+
+  - id: TR-win-002
+    system: WinCondition
+    gdd: design/gdd/win-condition.md
+    requirement: "VP calculation: chests (1), Ghost (1.0), Dragon (1.5); tiebreak to dragon killer"
+    adr: []
+    status: active
+
+  # === HUD ===
+  - id: TR-hud-001
+    system: HUD
+    gdd: design/gdd/hud.md
+    requirement: "Always-visible CanvasLayer layer=10 with HP hearts, VP counter, inventory slots, step icons, turn indicator"
+    adr: [ADR-0009]
+    status: active
+
+  - id: TR-hud-002
+    system: HUD
+    gdd: design/gdd/hud.md
+    requirement: "Pure reader — subscribes to signals, never mutates state"
+    adr: [ADR-0009]
+    status: active
+
+  # === CombatUI ===
+  - id: TR-combat-ui-001
+    system: CombatUI
+    gdd: design/gdd/combat-ui.md
+    requirement: "Modal CanvasLayer layer=11 overlay above HUD"
+    adr: [ADR-0009]
+    status: active
+
+  - id: TR-combat-ui-002
+    system: CombatUI
+    gdd: design/gdd/combat-ui.md
+    requirement: "Single Presentation->Feature signal: player_action_taken(CombatAction)"
+    adr: [ADR-0006, ADR-0009]
+    status: active
+
+  # === TileRevealVFX ===
+  - id: TR-vfx-001
+    system: TileRevealVFX
+    gdd: design/gdd/tile-reveal-vfx.md
+    requirement: "Flip animation (squish 0.15s -> swap -> expand 0.15s) as scene-space Node2D"
+    adr: [ADR-0009]
+    status: active
+
+  - id: TR-vfx-002
+    system: TileRevealVFX
+    gdd: design/gdd/tile-reveal-vfx.md
+    requirement: "Emits tile_reveal_complete signal to trigger EncounterDispatcher"
+    adr: [ADR-0002]
+    status: active
+
+  # === InventoryUI ===
+  - id: TR-inventory-ui-001
+    system: InventoryUI
+    gdd: design/gdd/inventory-ui.md
+    requirement: "Non-modal CanvasLayer layer=10 with 2 weapon + 1 key + 3 scroll slots"
+    adr: [ADR-0009]
+    status: active
+
+  - id: TR-inventory-ui-002
+    system: InventoryUI
+    gdd: design/gdd/inventory-ui.md
+    requirement: "Auto-updates from PlayerState signals, read-only display"
+    adr: [ADR-0002, ADR-0009]
+    status: active
+
+  # === GameConcept ===
+  - id: TR-concept-001
+    system: GameConcept
+    gdd: design/gdd/game-concept.md
+    requirement: "2-player hotseat board game"
+    adr: [ADR-0003]
+    status: active
