@@ -231,3 +231,130 @@ forbidden_patterns_canvas:
     adr: ADR-0009
     description: "Only CombatUI.player_action_taken is approved as a Presentation→Feature signal. Any other signal from HUD, InventoryUI, or TileRevealVFX consumed by Feature/Core layer requires an ADR update."
     enforcement: "Code review. Signal connection audit in GameScene._wire_signals()."
+
+forbidden_patterns_persistence:
+  - id: fp-018
+    pattern: resourcesaver_for_node_state
+    adr: ADR-0010
+    description: "ResourceSaver/ResourceLoader must never be used to serialize Node-based systems (PlayerState, DungeonGenerator, TurnManager). These extend Node, not Resource. Use explicit to_dict()/from_dict() with FileAccess + JSON instead."
+    enforcement: "grep: ResourceSaver.save( in any game source file — any hit is a violation."
+
+api_decisions_persistence:
+  - id: ad-011
+    decision: save_system_format
+    adr: ADR-0010
+    choice: "Post-MVP path: FileAccess + JSON to user://save_game.json. MVP has no save system."
+    rationale: "Sessions are 30–60 min (completable in one sitting). No meta-progression between sessions (Anti-Pillar). FileAccess + JSON is idiomatic Godot 4.x save pattern. ResourceSaver rejected per fp-018."
+
+api_decisions_movement:
+  - id: ad-012
+    decision: movement_class_ability_pattern
+    adr: ADR-0011
+    choice: "Direct boolean flag read from PlayerState.character_class (HeroClassData) — no strategy objects, no polymorphism"
+    rationale: "4 named boolean flags on HeroClassData are readable and testable. Strategy pattern is overengineered for MVP scope."
+
+  - id: ad-013
+    decision: portal_and_swap_cost_constants
+    adr: ADR-0011
+    choice: "PORTAL_ENTER_COST=1, PORTAL_TELEPORT_COST=1 (total=2 if used); SWAP_COST=4; SWORDWOMAN_BYPASS_STEP_COST=2"
+    rationale: "Portal entry + teleportation each cost 1 step. Teleportation suppressed when steps_remaining < 2 after entry."
+
+forbidden_patterns_movement:
+  - id: fp-019
+    pattern: swordwoman_bypass_without_step_check
+    adr: ADR-0011
+    description: "Voitelnitsa (Swordwoman) bypass requires steps_remaining >= 2 before use. Bypassing with 1 step available is a bug — costs 2 steps + 1 HP."
+    enforcement: "Unit test: AC-08 / EC-06 from movement-system.md verify step guard."
+
+interfaces_combat_turn:
+  - id: if-003
+    contract: combat_resolved_signal_signature
+    adr: ADR-0012
+    pattern: "signal combat_resolved(won: bool, six_rolled: bool) — second parameter added for Swordsman extra-step protocol"
+    notes: "All listeners must accept both parameters. Non-Swordsman paths emit six_rolled=false."
+
+  - id: if-004
+    contract: add_step_api
+    adr: ADR-0012
+    pattern: "TurnManager.add_step(n: int) -> void — adds steps to steps_remaining; n <= 0 → push_error; does not modify steps_taken"
+    notes: "Must be called BEFORE emitting combat_resolved. CombatSystem uses this for Swordsman extra-step."
+
+forbidden_patterns_turn:
+  - id: fp-020
+    pattern: combat_resolved_before_add_step
+    adr: ADR-0012
+    description: "CombatSystem must call TurnManager.add_step(1) BEFORE emitting combat_resolved(true, true). Emitting first means TurnManager FSM transitions on stale steps_remaining."
+    enforcement: "Code review. Integration test AC-05 from turn-manager.md verifies correct ordering."
+
+interfaces_playerstate_accessors:
+  - id: if-005
+    contract: get_weapons_accessor
+    adr: ADR-0013
+    pattern: "PlayerState.get_weapons() -> Array[ItemData] — returns current weapon slots (0–2 items); read-only accessor"
+    notes: "Added by ADR-0013. Required by LootSystem for weapon replacement logic."
+
+  - id: if-006
+    contract: get_scrolls_accessor
+    adr: ADR-0013
+    pattern: "PlayerState.get_scrolls() -> Array[ItemData] — returns current scroll slots (0–3 items); read-only accessor"
+    notes: "Added by ADR-0013. Required by LootSystem for scroll FIFO replacement."
+
+api_decisions_loot:
+  - id: ad-014
+    decision: weapon_replacement_strategy
+    adr: ADR-0013
+    choice: "Automatic replacement of weakest weapon by attack_bonus; tie-break = index 0 (first slot)"
+    rationale: "Keeps LootSystem stateless. Player choice UI rejected — requires new TurnManager FSM state. Discard rejected — contradicts Pillar 2."
+
+  - id: ad-015
+    decision: scroll_replacement_strategy
+    adr: ADR-0013
+    choice: "FIFO — replace scroll at index 0 (oldest acquired)"
+    rationale: "Scrolls lack attack_bonus analogue. FIFO is simple, deterministic, and requires no comparison logic."
+
+api_decisions_win:
+  - id: ad-016
+    decision: vp_accumulation_pattern
+    adr: ADR-0014
+    choice: "Distributed: each awarding system calls PlayerState.add_vp(amount) directly; WinCondition reads final player.vp values only"
+    rationale: "WinCondition must remain stateless (ADR-0008). PlayerState is authoritative for per-player state (ADR-0003)."
+
+  - id: ad-017
+    decision: vp_dragon_kill_constant
+    adr: ADR-0014
+    choice: "VP_DRAGON_KILL = 1.5 (float, fractional) in WinCondition"
+    rationale: "Fractional VP ensures mathematical impossibility of tie: killer always has X.5, others always have integer totals. Must remain fractional — changing to integer makes tiebreak load-bearing."
+
+  - id: ad-018
+    decision: loose_key_floor_state_type
+    adr: ADR-0015
+    choice: "bool field loose_key in DungeonCell (not Array[Vector2i] in LootSystem, not Node2D entity)"
+    rationale: "Two skeleton_key fights cannot occur on the same tile simultaneously (tile is cleared after first fight). Boolean is sufficient. Array in LootSystem would violate stateless rule (ADR-0008)."
+
+state_ownership_loose_key:
+  - id: so-006
+    state: loose_key_floor_state
+    owner: TileSystem (DungeonCell.loose_key field)
+    adr: ADR-0015
+    interface: "TileSystem.has_loose_key(pos) -> bool; place_loose_key(pos); remove_loose_key(pos)"
+    notes: "Extends so-005. loose_key is independent of is_cleared and is_revealed — separate lifecycle. place_loose_key is idempotent."
+
+interfaces_loose_key:
+  - id: if-007
+    contract: loose_key_api
+    adr: ADR-0015
+    pattern: "TileSystem.place_loose_key(pos: Vector2i) [idempotent], remove_loose_key(pos: Vector2i), has_loose_key(pos: Vector2i) -> bool [returns false for unknown pos]"
+    notes: "All three methods guard against missing positions (push_warning + return on unknown pos). LootSystem is the only caller."
+
+  - id: if-008
+    contract: cell_entered_wiring_order
+    adr: ADR-0015
+    pattern: "In GameScene._wire_signals(): movement_system.cell_entered.connect(loot_system._on_cell_entered) BEFORE other cell_entered listeners"
+    notes: "Godot signal dispatch is synchronous. LootSystem must complete pickup and emit item_acquired before TurnManager processes cell_entered. Comment required in _wire_signals()."
+
+forbidden_patterns_loose_key:
+  - id: fp-021
+    pattern: floor_keys_in_loot_system
+    adr: ADR-0015
+    description: "LootSystem must never store var floor_keys: Array[Vector2i] or any equivalent persistent floor-key position tracking. This violates the stateless rule (fp-015). Floor key state belongs exclusively in TileSystem.DungeonCell.loose_key."
+    enforcement: "grep: ^var floor_keys in loot_system.gd — any hit is a violation."

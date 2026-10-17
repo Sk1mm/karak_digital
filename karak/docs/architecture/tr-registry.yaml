@@ -3,7 +3,7 @@
 # IDs are never renumbered or deleted — deprecated entries are marked status: deprecated.
 
 last_updated: "2026-10-11"
-version: 1
+version: 2
 
 requirements:
   # === PlayerState ===
@@ -28,6 +28,27 @@ requirements:
     adr: [ADR-0003]
     status: active
 
+  - id: TR-player-state-004
+    system: PlayerState
+    gdd: design/gdd/player-state.md
+    requirement: "set_position() saves previous_position; retreat() restores it"
+    adr: [ADR-0003]
+    status: active
+
+  - id: TR-player-state-005
+    system: PlayerState
+    gdd: design/gdd/player-state.md
+    requirement: "HP knockout: hp<=0 sets hp=1, skip_next_turn=true; position/inventory unchanged"
+    adr: [ADR-0003]
+    status: active
+
+  - id: TR-player-state-006
+    system: PlayerState
+    gdd: design/gdd/player-state.md
+    requirement: "get_weapons() and get_scrolls() accessor methods for inventory queries"
+    adr: [ADR-0013]
+    status: active
+
   # === ClassSystem ===
   - id: TR-class-001
     system: ClassSystem
@@ -42,6 +63,14 @@ requirements:
     requirement: "Global ClassRegistry accessible from any system without import/preload"
     adr: [ADR-0001]
     status: active
+
+  - id: TR-class-003
+    system: ClassSystem
+    gdd: design/gdd/class-system.md
+    requirement: "Class selection: N random classes from unoccupied pool; character_class immutable after selection"
+    adr: [ADR-0003]
+    status: active
+    coverage: partial
 
   # === TileSystem ===
   - id: TR-tile-001
@@ -72,6 +101,29 @@ requirements:
     adr: [ADR-0004]
     status: active
 
+  - id: TR-tile-005
+    system: TileSystem
+    gdd: design/gdd/tile-system.md
+    requirement: "Tile pool (80 tiles) and event token pool (53 tokens) with draw_tile() and draw_event_token() APIs"
+    adr: [ADR-0004, ADR-0005]
+    status: active
+
+  - id: TR-tile-006
+    system: TileSystem
+    gdd: design/gdd/tile-system.md
+    requirement: "DungeonCell loose_key flag and event_content_id persistence for room re-entry"
+    adr: [ADR-0004]
+    status: active
+    coverage: partial
+
+  - id: TR-tile-007
+    system: TileSystem
+    gdd: design/gdd/tile-system.md
+    requirement: "Portal list: track revealed portals for teleportation target selection"
+    adr: [ADR-0004]
+    status: active
+    coverage: partial
+
   # === DiceSystem ===
   - id: TR-dice-001
     system: DiceSystem
@@ -79,6 +131,14 @@ requirements:
     requirement: "Seed-based deterministic RNG with roll(n, sides) and reroll_die(index) API"
     adr: [ADR-0008]
     status: active
+
+  - id: TR-dice-002
+    system: DiceSystem
+    gdd: design/gdd/dice-system.md
+    requirement: "set_seed() for test reproducibility"
+    adr: [ADR-0008]
+    status: active
+    coverage: partial
 
   # === MonsterDatabase ===
   - id: TR-monster-001
@@ -111,6 +171,14 @@ requirements:
     adr: [ADR-0005]
     status: active
 
+  - id: TR-dungeon-003
+    system: DungeonGenerator
+    gdd: design/gdd/dungeon-generator.md
+    requirement: "get_start_tile() API for KnockoutSystem Warrior teleport-to-start"
+    adr: [ADR-0005]
+    status: active
+    coverage: partial
+
   # === TurnManager ===
   - id: TR-turn-001
     system: TurnManager
@@ -130,8 +198,24 @@ requirements:
     system: TurnManager
     gdd: design/gdd/turn-manager.md
     requirement: "Swordsman extra step continuation on 6-roll"
+    adr: [ADR-0012]
+    status: active
+
+  - id: TR-turn-004
+    system: TurnManager
+    gdd: design/gdd/turn-manager.md
+    requirement: "steps_taken counter for Oracle first_step_combat_bonus detection"
     adr: []
     status: active
+    coverage: gap
+
+  - id: TR-turn-005
+    system: TurnManager
+    gdd: design/gdd/turn-manager.md
+    requirement: "burn_steps() API: sets steps_remaining=0 for fountain visits"
+    adr: [ADR-0008]
+    status: active
+    coverage: partial
 
   # === MovementSystem ===
   - id: TR-movement-001
@@ -145,14 +229,14 @@ requirements:
     system: MovementSystem
     gdd: design/gdd/movement-system.md
     requirement: "Class-specific movement bypasses (Rogue, Swordswoman, Wizard, Warlock)"
-    adr: []
+    adr: [ADR-0011]
     status: active
 
   - id: TR-movement-003
     system: MovementSystem
     gdd: design/gdd/movement-system.md
     requirement: "Portal movement cost rules"
-    adr: []
+    adr: [ADR-0011]
     status: active
 
   # === EncounterDispatcher ===
@@ -162,6 +246,30 @@ requirements:
     requirement: "Stateless signal router: ROOM -> combat/loot, FOUNTAIN -> heal, PORTAL -> teleport, CORRIDOR -> clear"
     adr: [ADR-0008]
     status: active
+
+  - id: TR-encounter-002
+    system: EncounterDispatcher
+    gdd: design/gdd/encounter-dispatcher.md
+    requirement: "Oracle two-token draw: draw_event_token() x2, player chooses 1, return other to pool"
+    adr: [ADR-0008]
+    status: active
+    coverage: partial
+
+  - id: TR-encounter-003
+    system: EncounterDispatcher
+    gdd: design/gdd/encounter-dispatcher.md
+    requirement: "Fountain choice: heal_full() + burn_steps() + clear_cell() or skip; fountain not consumed on refusal"
+    adr: []
+    status: active
+    coverage: gap
+
+  - id: TR-encounter-004
+    system: EncounterDispatcher
+    gdd: design/gdd/encounter-dispatcher.md
+    requirement: "Room re-entry: read existing event_content_id instead of drawing new token"
+    adr: [ADR-0004, ADR-0008]
+    status: active
+    coverage: partial
 
   # === CombatSystem ===
   - id: TR-combat-001
@@ -185,6 +293,30 @@ requirements:
     adr: [ADR-0008]
     status: active
 
+  - id: TR-combat-004
+    system: CombatSystem
+    gdd: design/gdd/combat-system.md
+    requirement: "Multi-phase combat: auto-reroll -> class reroll -> scroll -> HP Warlock -> resolve (4 sequential phases)"
+    adr: [ADR-0006]
+    status: active
+    coverage: partial
+
+  - id: TR-combat-005
+    system: CombatSystem
+    gdd: design/gdd/combat-system.md
+    requirement: "Signal ordering: combat_resolved BEFORE item_dropped to prevent TurnManager deadlock"
+    adr: [ADR-0012]
+    status: active
+    coverage: partial
+
+  - id: TR-combat-006
+    system: CombatSystem
+    gdd: design/gdd/combat-system.md
+    requirement: "Defeat/draw outcomes: take_damage(1) + knockout check + conditional retreat; draw = no damage + retreat"
+    adr: [ADR-0008]
+    status: active
+    coverage: partial
+
   # === LootSystem ===
   - id: TR-loot-001
     system: LootSystem
@@ -204,8 +336,24 @@ requirements:
     system: LootSystem
     gdd: design/gdd/loot-system.md
     requirement: "Item replacement logic (weakest weapon replaced on pickup)"
+    adr: [ADR-0013]
+    status: active
+
+  - id: TR-loot-004
+    system: LootSystem
+    gdd: design/gdd/loot-system.md
+    requirement: "Loose key auto-pickup on cell_entered: has_loose_key check + set_key + remove_loose_key"
+    adr: [ADR-0008]
+    status: active
+    coverage: partial
+
+  - id: TR-loot-005
+    system: LootSystem
+    gdd: design/gdd/loot-system.md
+    requirement: "Skeleton key floor placement: place_loose_key() when player already has key"
     adr: []
     status: active
+    coverage: gap
 
   # === KnockoutSystem ===
   - id: TR-knockout-001
@@ -222,6 +370,14 @@ requirements:
     adr: [ADR-0008]
     status: active
 
+  - id: TR-knockout-003
+    system: KnockoutSystem
+    gdd: design/gdd/knockout-system.md
+    requirement: "Warrior knockout: teleport to start_tile + heal_full + delayed clear_knockout (CombatSystem must see is_knocked_out=true)"
+    adr: [ADR-0008]
+    status: active
+    coverage: partial
+
   # === WinCondition ===
   - id: TR-win-001
     system: WinCondition
@@ -234,7 +390,7 @@ requirements:
     system: WinCondition
     gdd: design/gdd/win-condition.md
     requirement: "VP calculation: chests (1), Ghost (1.0), Dragon (1.5); tiebreak to dragon killer"
-    adr: []
+    adr: [ADR-0014]
     status: active
 
   # === HUD ===
@@ -252,6 +408,14 @@ requirements:
     adr: [ADR-0009]
     status: active
 
+  - id: TR-hud-003
+    system: HUD
+    gdd: design/gdd/hud.md
+    requirement: "game_over(winner) display: show final VP comparison and winner announcement"
+    adr: [ADR-0009]
+    status: active
+    coverage: partial
+
   # === CombatUI ===
   - id: TR-combat-ui-001
     system: CombatUI
@@ -266,6 +430,14 @@ requirements:
     requirement: "Single Presentation->Feature signal: player_action_taken(CombatAction)"
     adr: [ADR-0006, ADR-0009]
     status: active
+
+  - id: TR-combat-ui-003
+    system: CombatUI
+    gdd: design/gdd/combat-ui.md
+    requirement: "auto_reroll_triggered(die_index, new_value) signal for Swordsman sequential reroll display"
+    adr: [ADR-0009]
+    status: active
+    coverage: partial
 
   # === TileRevealVFX ===
   - id: TR-vfx-001
@@ -296,6 +468,14 @@ requirements:
     requirement: "Auto-updates from PlayerState signals, read-only display"
     adr: [ADR-0002, ADR-0009]
     status: active
+
+  - id: TR-inventory-ui-003
+    system: InventoryUI
+    gdd: design/gdd/inventory-ui.md
+    requirement: "ItemData.icon: Texture2D field required for inventory slot rendering"
+    adr: []
+    status: active
+    coverage: gap
 
   # === GameConcept ===
   - id: TR-concept-001

@@ -11,12 +11,12 @@ config_version=5
 [application]
 
 config/name="Karak"
-config/features=PackedStringArray("4.6", "GL Compatibility")
+config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
-ClassRegistry="*uid://c4j6ggruky0ja"
+ClassRegistry="*uid://xq547hgqqbeh"
 ItemDatabase="*uid://c66qg0lkdh1p5"
 MonsterDatabase="*uid://btypals3xqjir"
 

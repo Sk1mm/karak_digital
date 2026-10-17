@@ -2,7 +2,7 @@
 
 ## Language
 
-**Always respond in [TO BE CONFIGURED — Russian / English].** All agent responses, explanations, questions, and communications must be in this language, regardless of the language used by the user.
+**Always respond in Russian.** All agent responses, explanations, questions, and communications must be in this language, regardless of the language used by the user.
 
 Indie game development managed through 49 coordinated Claude Code subagents.
 Each agent owns a specific domain, enforcing separation of concerns and quality.
@@ -68,6 +68,17 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 ```
 /dev-story → [СТОП, ждать] → /code-review → [СТОП, ждать] → /story-done → [СТОП, ждать]
 ```
+
+### Рекомендация новой сессии
+
+Когда следующий шаг — запуск скилла в тяжёлом контексте (прочитано много файлов, долгая сессия), **явно указывать**:
+
+> ⚠ Следующий шаг: `/skill-name` — рекомендуется **новая сессия** (контекст перегружен).
+
+Критерии для рекомендации новой сессии:
+- Прочитано 5+ крупных файлов (GDD, architecture docs) в текущей сессии
+- Следующий скилл будет перечитывать часть тех же файлов
+- Сессия длится долго и контекст приближается к 60–70% (см. Context Management)
 
 ### Коммиты
 

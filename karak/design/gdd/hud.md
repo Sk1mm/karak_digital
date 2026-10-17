@@ -281,6 +281,7 @@ CanvasLayer (layer=10)
     │       ├── HeartsRow (HBoxContainer)          ← 5 × TextureRect
     │       ├── VPRow (HBoxContainer)              ← TextureRect(star_icon) + Label(vp_value)
     │       ├── InventoryGrid (GridContainer, columns=3)  ← 6 × SlotPanel
+    │       ├── InventoryButton (TextureButton, 44×44px)  ← bag icon; visible/enabled только в ACTIVE
     │       ├── KnockoutOverlay (Control, visible=false)
     │       └── ActiveHighlight (Panel, z_index=top)
     ├── PlayerPanel_1 (PanelContainer, anchor=right)
@@ -299,6 +300,7 @@ CanvasLayer (layer=10)
 | VP-счётчик (Label) | ширина авто | Числовой; формат: «2.5» или «3» |
 | Слот инвентаря | 56×56px | Минимум для кликабельности (44px + padding) |
 | Иконка предмета | 48×48px | Визуальный вес согласно art-bible |
+| InventoryButton | 44×44px | Минимум hit-zone (Basic accessibility tier) |
 | Иконка шага | 24×24px | Не главный элемент, дополнительный |
 | Нокаут-оверлей | 48×48px | Заметен поверх приглушённого блока |
 
@@ -386,6 +388,21 @@ THEN VPRow P1: Label отображает «1.5»
 GIVEN оба блока инициализированы с vp=0
 WHEN PlayerState P2 испускает `vp_changed(2.0)`
 THEN VPRow P2 показывает «2.0»; VPRow P1 не изменился (по-прежнему «0»)
+
+**AC-HUD-CR-11** `Logic` · **BLOCKING**
+GIVEN PlayerPanel_0 в состоянии `ACTIVE`
+WHEN инспектируется InventoryButton P1
+THEN `InventoryButton.visible == true`, `InventoryButton.disabled == false`; размер hit-zone ≥ 44×44px
+
+**AC-HUD-CR-12** `Logic` · **BLOCKING**
+GIVEN PlayerPanel_0 в состоянии `INACTIVE` или `KNOCKED_OUT`
+WHEN инспектируется InventoryButton P1
+THEN `InventoryButton.visible == false`
+
+**AC-HUD-CR-13** `Logic` · **BLOCKING**
+GIVEN PlayerPanel_0 в состоянии `ACTIVE`, InventoryButton видим и активен
+WHEN игрок кликает InventoryButton
+THEN InventoryUI открывается для P1; InventoryButton переходит в pressed state
 
 ---
 

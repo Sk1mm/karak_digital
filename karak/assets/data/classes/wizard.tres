@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="HeroClassData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/foundation/hero_class_data.gd" id="1_herodata"]
+
+[resource]
+script = ExtResource("1_herodata")
+id = &"wizard"
+display_name = "Волшебник"
+max_hp = 5
+can_reroll_both_dice = false
+wins_on_draw = false
+can_spend_hp_for_attack = false
+auto_reroll_on_one = false
+can_continue_turn_on_six = false
+can_reroll_one_die = false
+first_step_combat_bonus = 0
+knockout_teleport_to_start = false
+knockout_no_turn_skip = false
+knockout_full_heal = false
+can_bypass_monster_free = false
+can_bypass_monster_cost = false
+can_pass_through_walls = true
+can_swap_positions = false
+choose_encounter_from_two = false
+magic_charge_no_discard = true

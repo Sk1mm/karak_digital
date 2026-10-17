@@ -73,6 +73,18 @@ Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment variable.
 
 **Current status**: Not yet used in this project. Document usage here when first adopted.
 
+## Auto-Fill Rules (Solo Project)
+
+Fields that Claude fills automatically without asking, because the user is
+working alone and these are non-critical for planning:
+
+- **`Estimate:`** in story headers — Claude assigns a rough t-shirt size and
+  hours estimate (e.g., `S — 1–2 часа`, `M — 2–3 часа`, `L — 4–6 часов`)
+  when a story is created or when `/story-readiness` flags it missing. No
+  user approval required.
+
+---
+
 ## Parallel Task Protocol
 
 When an orchestration skill spawns multiple independent agents:
